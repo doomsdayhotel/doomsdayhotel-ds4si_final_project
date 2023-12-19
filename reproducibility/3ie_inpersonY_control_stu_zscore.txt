@@ -1,0 +1,24 @@
+	(1)	(2)
+VARIABLES	z_midline	z_endline
+		
+1.in_person_sch	-0.003	0.044
+	(0.028)	(0.035)
+z_baseline	0.738***	0.721***
+	(0.010)	(0.010)
+2.blockZ	-0.061	-0.020
+	(0.040)	(0.050)
+3.blockZ	-0.085	-0.120*
+	(0.062)	(0.062)
+4.blockZ	-0.082*	-0.007
+	(0.043)	(0.062)
+5.blockZ	-0.040	-0.017
+	(0.042)	(0.053)
+6.blockZ	-0.031	0.021
+	(0.054)	(0.061)
+Constant	0.043	-0.052
+	(0.033)	(0.041)
+		
+Observations	10,967	10,168
+R-squared	0.544	0.493
+Robust standard errors in parentheses		
+*** p<0.01, ** p<0.05, * p<0.1		

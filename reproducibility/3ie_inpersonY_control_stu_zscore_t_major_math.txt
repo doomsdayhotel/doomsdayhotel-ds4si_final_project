@@ -1,0 +1,60 @@
+	(1)
+VARIABLES	z_endline
+	
+1.in_person_sch	0.032
+	(0.041)
+1.t_major_math	0.020
+	(0.051)
+0b.in_person_sch#0b.t_major_math	0.000
+	(0.000)
+0b.in_person_sch#1o.t_major_math	0.000
+	(0.000)
+1o.in_person_sch#0b.t_major_math	0.000
+	(0.000)
+1.in_person_sch#1.t_major_math	-0.052
+	(0.064)
+z_baseline	0.689***
+	(0.011)
+age2	-0.071***
+	(0.010)
+female	0.151***
+	(0.019)
+father_jhs	0.003
+	(0.016)
+mother_jhs	-0.023
+	(0.016)
+ses1	0.012
+	(0.009)
+class_size	0.004***
+	(0.001)
+t_female	0.052
+	(0.037)
+t_age2	-0.001
+	(0.009)
+t_exp	-0.003
+	(0.009)
+t_4yrcoll	-0.002
+	(0.048)
+t_cert	-0.049
+	(0.053)
+o.t_major_math	-
+	
+t_rank_yigao	0.106**
+	(0.049)
+2.blockZ	0.079*
+	(0.047)
+3.blockZ	0.043
+	(0.060)
+4.blockZ	0.012
+	(0.066)
+5.blockZ	0.063
+	(0.053)
+6.blockZ	0.172***
+	(0.060)
+Constant	0.636**
+	(0.281)
+	
+Observations	10,006
+R-squared	0.507
+Robust standard errors in parentheses	
+*** p<0.01, ** p<0.05, * p<0.1	

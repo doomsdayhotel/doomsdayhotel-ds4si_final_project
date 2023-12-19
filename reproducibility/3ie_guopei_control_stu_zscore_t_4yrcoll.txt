@@ -1,0 +1,66 @@
+	(1)
+VARIABLES	z_endline
+	
+1.treatment	0.097**
+	(0.041)
+2.treatment	0.055
+	(0.042)
+1.t_4yrcoll	0.122**
+	(0.052)
+0b.treatment#0b.t_4yrcoll	0.000
+	(0.000)
+0b.treatment#1o.t_4yrcoll	0.000
+	(0.000)
+1o.treatment#0b.t_4yrcoll	0.000
+	(0.000)
+1.treatment#1.t_4yrcoll	-0.312***
+	(0.078)
+2o.treatment#0b.t_4yrcoll	0.000
+	(0.000)
+2.treatment#1.t_4yrcoll	-0.203***
+	(0.074)
+z_baseline	0.689***
+	(0.010)
+age2	-0.070***
+	(0.009)
+female	0.141***
+	(0.015)
+father_jhs	-0.001
+	(0.013)
+mother_jhs	-0.001
+	(0.014)
+ses1	0.008
+	(0.008)
+class_size	0.004***
+	(0.001)
+t_female	0.055*
+	(0.031)
+t_age2	-0.001
+	(0.008)
+t_exp	-0.005
+	(0.007)
+o.t_4yrcoll	-
+	
+t_cert	0.077
+	(0.050)
+t_major_math	-0.009
+	(0.031)
+t_rank_yigao	0.114***
+	(0.040)
+2.blockZ	0.022
+	(0.042)
+3.blockZ	0.034
+	(0.055)
+4.blockZ	-0.004
+	(0.049)
+5.blockZ	0.009
+	(0.043)
+6.blockZ	0.071
+	(0.050)
+Constant	0.501**
+	(0.237)
+	
+Observations	14,599
+R-squared	0.507
+Robust standard errors in parentheses	
+*** p<0.01, ** p<0.05, * p<0.1	
