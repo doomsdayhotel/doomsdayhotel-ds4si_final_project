@@ -1,0 +1,529 @@
+---
+title: "Data_science_model"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-12-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. Summary of the data
+
+First, import the data. Then, view the data.
+
+```{r}
+# Changing the location of a file
+pd_data <- read.csv("C:\\Users\\admin\\Desktop\\excepttable5.csv")
+head(pd_data)
+nrow(pd_data)
+names(pd_data)
+str(pd_data)
+```
+
+**Note for some special variables: **
+
+**For Treatment**
+
+- Treatment 1 (Professional Development): Teachers in this group participated in a program aimed at enhancing middle school math teaching, combining in-person and online training. (`treatment = 0`)
+- Treatment 2 (Post-training Follow-up): This group involved continued engagement with PD participants through texts, calls, new materials, and encouragement for online platform use. (`treatment = 1`)
+- Treatment 3 (Post-training Evaluation): In this group, teachers underwent a follow-up evaluation post-PD, requiring a lesson plan presentation and interview at their school, with PD completion certificates dependent on their performance. (`treatment = 2`) 
+
+**Other Variables**
+
+- z_t_math_base: Baseline standardized math scores.
+- z_t_math_end: Endline standardized math scores.
+- blockZZ: Possibly refers to groupings or experimental blocks used in the study.
+- treatment: Experimental treatment groups (e.g., whether teachers received training).
+- spillover_class: Possibly indicates the spillover effect between classes.
+- in_person_sch: Indicates whether the school is an in-person teaching school (as opposed to online learning).
+- z_baseline: General standardized indicators at the baseline.
+- age2: Age squared (possibly used for non-linear effects in regression analysis).
+- female: Gender (typically 1 for female, 0 for male).
+- father_jhs: Father's education level.
+- mother_jhs: Mother's education level.
+- ses1: Socioeconomic status indicator 1.
+- class_size: Class size.
+- t_female: Teacher's gender.
+- t_age2: Teacher's age, squared (possibly used for. non-linear effects in regression analysis).
+- t_exp: Teacher's experience (in years).
+- t_4yrcoll: Whether the teacher has a four-year college degree.
+- t_cert: Whether the teacher holds a teaching certificate.
+- t_major_math: Whether the teacher majored in mathematics.
+- t_rank_yigao: Teacher's rank or level at a first-tier high school.
+- b_t_math_t_direct: Baseline mathematics scores for teacher's direct teaching method.
+- e_t_math_t_direct: Final mathematics scores for teacher's direct teaching method.
+- b_t_math_t_active: Baseline mathematics scores for teacher's active teaching method.
+- e_t_math_t_active: Final mathematics scores for teacher's active teaching method.
+- b_t_math_fixed: Baseline mathematics scores for teacher's fixed teaching method.
+- e_t_math_fixed: Final mathematics scores for teacher's fixed teaching method.
+- b_t_math_rules: Baseline mathematics scores for teacher's rules-based teaching method.
+- e_t_math_rules: Final mathematics scores for teacher's rules-based teaching method.
+- b_t_math_inquiry: Baseline mathematics scores for teacher's inquiry-based teaching method.
+- e_t_math_inquiry: Final mathematics scores for teacher's inquiry-based teaching method.
+- t_intr_mot_base: Teacher's baseline intrinsic motivation.
+- t_intr_mot_end: Teacher's final intrinsic motivation.
+- t_prosoc_mot_base: Teacher's baseline prosocial. motivation
+- t_prosoc_mot_end: Teacher's final prosocial motivation.
+- blockZ: Another variable possibly indicating grouping or experimental block.
+
+### Preprocessing Some Variables
+
+```{r}
+# Converted to factor format for subsequent analysis
+pd_data$treatment <- as.factor(pd_data$treatment)
+
+# View NA values
+colSums(is.na(pd_data))
+
+# Handle missing values
+# Delete rows containing NA values
+pd_new <- na.omit(pd_data)  
+
+```
+
+
+# 2. Subgroup Analysis
+
+# 2.1 Impact of **Gender** on the effectiveness of teacher training
+
+```{r cars}
+# Load necessary packages; install them if not already installed
+if (!require(effects)) install.packages("effects")
+library(effects)
+if (!require(ggplot2)) install.packages("ggplot2")
+library(ggplot2)
+
+# Split the data into two groups based on gender: male and female
+data_male <- subset(pd_data, t_female == 0)  # Subset for male teachers
+data_female <- subset(pd_data, t_female == 1)  # Subset for female teachers
+
+# Perform regression analysis for male teachers
+model_male <- lm(z_t_math_end ~ treatment, data = data_male)
+summary(model_male)  # Display summary of the model for male teachers
+
+# Perform regression analysis for female teachers
+model_female <- lm(z_t_math_end ~ treatment, data = data_female)
+summary(model_female)  # Display summary of the model for female teachers
+
+# Create a Linear Regression Model with Interaction Terms
+# This model analyzes the treatment effect by gender (female indicator)
+model_sex <- lm(z_t_math_end ~ treatment * t_female + t_major_math + 
+  z_t_math_base + age2 + class_size + t_exp + t_4yrcoll + t_cert, 
+  data = pd_new)
+summary(model_sex)  # View the summary of the model
+
+# Calculate and view the interaction effect between 'treatment' and 't_female'
+interaction_effect <- effect("treatment*t_female", model_sex)
+
+# Convert the calculated interaction effect into a data frame for plotting
+interaction_effect_df <- as.data.frame(interaction_effect)
+
+# Generate a plot to visualize the interaction effect
+interaction_plot <- ggplot(interaction_effect_df, aes(x = t_female, y = fit)) +
+  geom_line() +  # Add line graph
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +  # Add confidence interval band
+  facet_grid(. ~ treatment, scales = "free_x") +  # Separate plots by treatment type
+  labs(title = "Effect of Treatment by Gender (p-value: 0.005688)",
+       x = "Teacher Gender (0 for male, 1 for female)",
+       y = "Change in Math Score") +  # Add labels and title
+  theme(plot.title = element_text(hjust = 0.5))  # Center align the title
+
+# Display the interaction plot
+print(interaction_plot)
+```
+
+
+# 2.2 Impact of **Teacher Experience** on training effectiveness
+
+```{r pressure, echo=FALSE}
+# Load necessary packages, installing them if they are not already installed
+if (!require(stats)) install.packages("stats")
+library(stats)
+
+# Calculate the mean value of the 't_exp' variable, excluding missing values
+mean_t_exp <- mean(pd_data$t_exp, na.rm = TRUE)
+
+# Replace missing values in 't_exp' with the calculated mean
+pd_data$t_exp[is.na(pd_data$t_exp)] <- mean_t_exp
+
+# Calculate and plot the total within-groups sum of squares for different cluster numbers
+wss <- (nrow(pd_data)-1)*sum(apply(pd_data, 2, var))  # Initial sum of squares
+for (i in 2:10) wss[i] <- sum(kmeans(pd_data$t_exp, centers=i)$withinss)
+plot(1:10, wss, type="b", xlab="Number of Clusters", 
+     ylab="Within groups sum of squares")
+
+# Perform k-means clustering
+set.seed(123)  # Set seed for reproducibility
+k <- 3  # Number of clusters
+kmeans_result <- kmeans(pd_data$t_exp, centers = k)
+
+# Add the clustering results to the dataframe
+pd_data$exp_cluster <- kmeans_result$cluster
+
+# Visualize the clustering with a scatterplot
+library(ggplot2)
+ggplot(pd_data, aes(x = t_exp, y = 1, color = as.factor(exp_cluster))) + 
+  geom_point() +
+  labs(title = "K-means Clustering of Teacher Experience", 
+       x = "Teacher Experience", y = "") +
+  scale_color_discrete(name = "Cluster")
+
+# Analyze the distribution of samples across clusters
+cluster_sizes <- table(pd_data$exp_cluster)  # Count of samples per cluster
+
+# Calculate weights for each cluster based on their size (reciprocal of the cluster size)
+weights_vec <- 1 / cluster_sizes[pd_data$exp_cluster]
+pd_data$weights_vec <- weights_vec
+
+# Perform weighted linear regression analysis
+weighted_model <- lm(z_t_math_end ~ treatment, 
+                     data = pd_data, weights = weights_vec)
+summary(weighted_model)  # Display the model summary
+
+# Convert weights vector to a numeric format for plotting
+pd_data$weights_vec <- as.numeric(as.vector(pd_data$weights_vec))
+
+# Plot the results of the weighted regression analysis
+ggplot(pd_data, aes(x = treatment, y = z_t_math_end)) + 
+   geom_point(aes(size = weights_vec)) +  # Point size indicates weight
+  labs(title = "Weighted Regression of Math Scores on Treatment", 
+       x = "Treatment", y = "Math Score") +
+   theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+# Create a Linear Regression Model with Interaction Terms
+# This model is designed to analyze the effect of 'treatment' by 't_exp' (teacher experience)
+model_exp <- lm(z_t_math_end ~ treatment * t_exp + t_major_math + 
+  z_t_math_base + age2 + class_size + t_female + t_4yrcoll + t_cert, 
+  data = pd_new)
+summary(model_exp)  # Display the summary of the model
+
+# Calculate the interaction effect between 'treatment' and 't_exp'
+interaction_effect_exp <- effect("treatment*t_exp", model_exp)
+
+# Convert the interaction effect into a data frame format for plotting
+interaction_effect_df_exp <- as.data.frame(interaction_effect_exp)
+
+# Create a plot to visualize the interaction effect
+interaction_plot_exp <- ggplot(interaction_effect_df_exp, 
+                               aes(x = t_exp, y = fit)) +
+  geom_line() +  # Add line to represent the interaction effect
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +  # Add confidence interval band
+  facet_grid(. ~ treatment, scales = "free_x") +  # Separate plots by treatment type
+  labs(title = "Effect of Treatment by Teacher Experiment (p-value: 0.01372)",
+       x = "Teacher Experiment",  # Label for x-axis
+       y = "Change in Math Score") +  # Label for y-axis
+  theme(plot.title = element_text(hjust = 0.5))  # Center align the title
+
+# Display the interaction plot
+print(interaction_plot_exp)
+
+
+```
+
+# 2.3 Impact of teachers' **Education** level
+
+
+```{r}
+# Handling missing values in the dataset
+# The analysis focuses on groups of teachers with and without university degrees
+
+# Separate the data into two groups based on university education level
+data_low <- subset(pd_new, t_4yrcoll == 0)  # Subset for teachers without a 4-year college degree
+data_high <- subset(pd_new, t_4yrcoll == 1)  # Subset for teachers with a 4-year college degree
+
+# Perform regression analysis for teachers without a 4-year college degree
+model_low <- lm(z_t_math_end ~ treatment, data = data_low)
+summary(model_low)  # Display summary of the model for teachers without a 4-year degree
+
+# Perform regression analysis for teachers with a 4-year college degree
+model_high <- lm(z_t_math_end ~ treatment, data = data_high)
+summary(model_high)  # Display summary of the model for teachers with a 4-year degree
+
+# Create a Linear Regression Model with Interaction Terms
+# This model analyzes the effect of 'treatment' by 't_4yrcoll' (4-year college education)
+model_4yrcoll <- lm(z_t_math_end ~ treatment * t_4yrcoll + t_major_math + z_t_math_base + age2 + class_size + t_female + t_exp + t_cert, data = pd_new)
+summary(model_4yrcoll)  # View the summary of the model
+
+# Calculate the interaction effect between 'treatment' and 't_4yrcoll'
+interaction_effect_4yrcoll <- effect("treatment*t_4yrcoll", model_4yrcoll)
+
+# Convert the interaction effect into a data frame for plotting
+interaction_effect_df_4yrcoll <- as.data.frame(interaction_effect_4yrcoll)
+
+# Generate a plot to visualize the interaction effect
+interaction_plot_4yrcoll <- ggplot(interaction_effect_df_4yrcoll, aes(x = t_4yrcoll, y = fit)) +
+  geom_line() +  # Add line to represent the interaction effect
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +  # Add confidence interval band
+  facet_grid(. ~ treatment, scales = "free_x") +  # Separate plots by treatment type
+  labs(title = "Effect of Treatment by Teacher Education Level (p-value: 0.01405)",
+       x = "Teacher Education Level",  # Label for x-axis
+       y = "Change in Math Score") +  # Label for y-axis
+  theme(plot.title = element_text(hjust = 0.5))  # Center align the title
+
+# Display the interaction plot
+print(interaction_plot_4yrcoll)
+
+
+
+```
+
+# 2.4 Impact of teachers **majoring in mathematics**
+
+```{r}
+# Handling missing values in the dataset
+# The analysis focuses on groups of teachers based on their major: mathematics or other subjects
+
+# Creating subsets based on the teacher's major
+data_major_math <- subset(pd_new, t_major_math == 1)  # Subset for teachers who majored in mathematics
+data_major_other <- subset(pd_new, t_major_math == 0)  # Subset for teachers who majored in other subjects
+
+# Regression analysis for teachers who majored in mathematics
+model_major_math <- lm(z_t_math_end ~ treatment, 
+                       data = data_major_math)
+summary(model_major_math)  # Display summary of the model for teachers who majored in mathematics
+
+# Regression analysis for teachers who majored in other subjects
+model_major_other <- lm(z_t_math_end ~ treatment, 
+                        data = data_major_other)
+summary(model_major_other)  # Display summary of the model for teachers who majored in other subjects
+
+# Create a Linear Regression Model with Interaction Terms
+# This model analyzes the effect of 'treatment' by 't_major_math' (majoring in math)
+model_major_math <- lm(z_t_math_end ~ treatment * t_major_math + 
+    t_4yrcoll + z_t_math_base + age2 + class_size + t_female + t_exp + t_cert, 
+    data = pd_new)
+summary(model_major_math)  # View the summary of the model
+
+# Calculate the interaction effect between 'treatment' and 't_major_math'
+interaction_effect_major_math <- effect("treatment*t_major_math", model_major_math)
+
+# Convert the interaction effect into a data frame for plotting
+interaction_effect_df_major_math <- as.data.frame(interaction_effect_major_math)
+
+# Generate a plot to visualize the interaction effect
+interaction_plot_major_math <- ggplot(interaction_effect_df_major_math, 
+                                      aes(x = t_major_math, y = fit)) +
+  geom_line() +  # Add line to represent the interaction effect
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +  # Add confidence interval band
+  facet_grid(. ~ treatment, scales = "free_x") +  # Separate plots by treatment type
+  labs(title = "Effect of Treatment by Teacher majoring in math (p-value: 0.02)",
+       x = "Teacher majoring in math",  # Label for x-axis
+       y = "Change in Math Score") +  # Label for y-axis
+  theme(plot.title = element_text(hjust = 0.5))  # Center align the title
+
+# Display the interaction plot
+print(interaction_plot_major_math)
+
+
+```
+
+# 3 Logistic Regression
+
+```{r}
+# Analyze the distribution of math scores in the dataset
+summary(pd_new$z_t_math_end)
+
+# Create a binary variable for high math scores based on a threshold of 0.7
+pd_new$high_math_score = ifelse(pd_new$z_t_math_end > 0.7, 1, 0)  # 1 if score is above 0.7, otherwise 0
+
+# Perform logistic regression analysis to predict high math scores
+logit_model <- glm(high_math_score ~ treatment + t_cert + t_4yrcoll + 
+    z_t_math_base + age2 + class_size + t_female + t_exp + t_major_math, 
+                   data = pd_new, family = binomial())
+summary(logit_model)  # Display the summary of the logistic regression model
+
+# Create another binary variable for mean math scores based on a threshold of -0.1
+pd_new$mean_math_score = ifelse(pd_new$z_t_math_end > -0.1, 1, 0)  # 1 if score is above -0.1, otherwise 0
+
+# Perform another logistic regression analysis to predict mean math scores
+logit_model2 <- glm(mean_math_score ~ treatment + t_cert + t_4yrcoll + 
+    z_t_math_base + age2 + class_size + t_female + t_exp + t_major_math, 
+                    data = pd_new, family = binomial())
+summary(logit_model2)  # Display the summary of the second logistic regression model
+
+# Plotting predicted probabilities for Treatment 1 regarding mean math scores
+pd_new$predicted_prob2 <- predict(logit_model2, type = "response")  # Predicted probabilities from the second model
+ggplot(pd_new, aes(x = treatment, y = predicted_prob2)) +
+  geom_jitter(alpha = 0.2) +  # Scatter plot with jitter for visualization
+  stat_smooth(method = "glm", method.args = list(family = "binomial"), 
+              se = TRUE) +  # Smooth curve with binomial GLM
+  labs(x = "Treatment", y = "Predicted Probability of Mean Math Score",
+       title = "Predicted Probability of Mean Math Score by Treatment")  # Adding labels and title
+
+# Plotting predicted probabilities for Treatment 1 regarding high math scores
+pd_new$predicted_prob <- predict(logit_model, type = "response")  # Predicted probabilities from the first model
+ggplot(pd_new, aes(x = treatment, y = predicted_prob)) +
+  geom_jitter(alpha = 0.2) +  # Scatter plot with jitter for visualization
+  stat_smooth(method = "glm", method.args = list(family = "binomial"), 
+              se = TRUE) +  # Smooth curve with binomial GLM
+  labs(x = "Treatment", y = "Predicted Probability of High Math Score",
+       title = "Predicted Probability of High Math Score by Treatment")  # Adding labels and title
+
+```
+
+```{r}
+# Load the pROC package for ROC curve analysis, installing it if not already installed
+if (!require(pROC)) install.packages("pROC")
+library(pROC)
+
+# Predicting probabilities of achieving high math scores using the logistic regression model 'logit_model'
+predicted_probs_high <- predict(logit_model, type = "response")
+
+# Calculate the ROC (Receiver Operating Characteristic) curve and AUC (Area Under the Curve) for high math score prediction
+roc_high <- roc(pd_new$high_math_score, predicted_probs_high)  # Create ROC object
+auc_high <- auc(roc_high)  # Calculate AUC
+
+# Plot the ROC curve for high math score prediction
+plot(roc_high, col = "green", 
+     main = "ROC Curve for High Math Score Prediction")  # Plot ROC curve in green
+abline(a = 0, b = 1, lty = 2, col = "red")  # Add reference line
+text(0.5, 0.5, paste("AUC =", round(auc_high, 2)), 
+     col = "blue")  # Display AUC value on the plot
+
+# Predict probabilities of achieving mean math scores using the logistic regression model 'logit_model2'
+predicted_probs_mean <- predict(logit_model2, type = "response")
+
+# Calculate the ROC curve and AUC for mean math score prediction
+roc_mean <- roc(pd_new$mean_math_score, predicted_probs_mean)  # Create ROC object
+auc_mean <- auc(roc_mean)  # Calculate AUC
+
+# Plot the ROC curve for mean math score prediction
+plot(roc_mean, col = "blue", main = "ROC Curve for Mean Math Score Prediction")  # Plot ROC curve in blue
+abline(a = 0, b = 1, lty = 2, col = "red")  # Add reference line
+text(0.5, 0.5, paste("AUC =", round(auc_mean, 2)), 
+     col = "blue")  # Display AUC value on the plot
+
+```
+
+
+# 4 Matching Score Method (PSM)
+
+```{r}
+# Load the MatchIt package for propensity score matching, installing it if not already installed
+if (!require(MatchIt)) install.packages("MatchIt")
+library(MatchIt)
+
+# Preparing data for comparison between treatment group 1 and control group 0
+# Filter the dataset to include only treatment groups 0 and 1
+pd_new_01 <- pd_new[pd_new$treatment %in% c(0, 1), ]
+
+# Use Propensity Score Matching (PSM) to match subjects between treatment groups 0 and 1
+# This step aims to balance the covariates across the two groups for a fair comparison
+psm_model_01 <- matchit(treatment ~ age2 + female + father_jhs + 
+  mother_jhs + ses1 + t_cert + t_4yrcoll + z_t_math_base + age2 + class_size + 
+    t_female + t_exp + t_major_math, data = pd_new_01, method = "nearest")
+
+# Extract the matched data from the PSM model for groups 0 and 1
+matched_data_01 <- match.data(psm_model_01)
+
+# Perform regression analysis on the matched data for treatment group 1 versus control group 0
+matched_model_01 <- lm(z_t_math_end ~ treatment, data = matched_data_01)
+summary(matched_model_01)  # Display the summary of the regression model
+
+# Preparing data for comparison between treatment group 2 and control group 0
+# Filter the dataset to include only treatment groups 0 and 2
+pd_new_02 <- pd_new[pd_new$treatment %in% c(0, 2), ]
+
+# Use Propensity Score Matching (PSM) to match subjects between treatment groups 0 and 2
+# This step is similar to the previous one but focuses on groups 0 and 2
+psm_model_02 <- matchit(treatment ~ age2 + female + father_jhs + mother_jhs + 
+    ses1 + t_cert + t_4yrcoll + z_t_math_base + age2 + class_size + 
+      t_female + t_exp + t_major_math, data = pd_new_02, method = "nearest")
+
+# Extract the matched data from the PSM model for groups 0 and 2
+matched_data_02 <- match.data(psm_model_02)
+
+# Perform regression analysis on the matched data for treatment group 2 versus control group 0
+matched_model_02 <- lm(z_t_math_end ~ treatment, data = matched_data_02)
+summary(matched_model_02)  # Display the summary of the regression model
+
+```
+
+```{r}
+# Load the ggplot2 package for creating visualizations
+library(ggplot2)
+
+# Create a data frame to store the results for plotting
+# This data frame includes the treatment groups and their corresponding estimates and standard errors
+results_df <- data.frame(
+  treatment = c("Control", "Treatment 1", "Treatment 2"),
+  estimate = c(0, 0.18592, 0.14249),  # Effect size estimates for each group
+  std.error = c(0, 0.09166, 0.09030)  # Standard errors for each estimate
+)
+
+# Calculate the confidence intervals for the effect size estimates
+# The confidence interval is computed as the estimate plus or minus 1.96 times the standard error
+results_df$ci_lower <- results_df$estimate - 1.96 * results_df$std.error  # Lower bound of the confidence interval
+results_df$ci_upper <- results_df$estimate + 1.96 * results_df$std.error  # Upper bound of the confidence interval
+
+# Create a plot to visualize the estimated treatment effects with their confidence intervals
+ggplot(results_df, aes(x = treatment, y = estimate)) +  # Base plot with treatment groups on the x-axis and estimates on the y-axis
+  geom_point() +  # Add points to represent the effect size estimates
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +  # Add error bars to show the confidence intervals
+  theme_minimal() +  # Use a minimal theme for a clean look
+  labs(title = "Estimated Treatment Effects on Math Scores",  # Add a title to the plot
+       x = "Group",  # Label for the x-axis
+       y = "Estimated Effect Size")  # Label for the y-axis
+
+
+```
+
+```{r}
+# If cobalt is not installed, uncomment and run the following line:
+if (!require(cobalt)) install.packages("cobalt")
+library(cobalt)
+
+# Assuming 'psm_model_01' is the MatchIt object from the first PSM analysis
+# Using love.plot() from cobalt to create a love plot for psm_model_02
+
+love.plot(psm_model_01, 
+          abs = TRUE, # to plot absolute standardized mean differences
+          threshold = .1) # this sets the acceptable
+
+
+love.plot(psm_model_02, 
+          abs = TRUE, # to plot absolute standardized mean differences
+          threshold = .1) # this sets the acceptable balance threshold
+
+
+```
+
+```{r}
+# Load the ggplot2 library for data visualization
+library(ggplot2)
+
+# Assuming that the matched data frames (matched_data_01 and matched_data_02) are already created
+# and linear models (matched_model_01 and matched_model_02) are already run
+
+# Extract the coefficients (Estimate of treatment effect) from the linear models
+coef_01 <- coef(summary(matched_model_01))["treatment1", "Estimate"]  # Coefficient for Treatment 1
+coef_02 <- coef(summary(matched_model_02))["treatment2", "Estimate"]  # Coefficient for Treatment 2
+
+# Create a data frame to store the extracted coefficients for plotting
+plot_data <- data.frame(
+  group = c("Control vs Treatment 1", "Control vs Treatment 2"),
+  value = c(coef_01, coef_02)  # Values of the coefficients
+)
+
+# Define a vector of green shades for the bar chart
+green_shades <- c("#66c2a4", "#41ae76")  # Two shades of green
+
+# Generate a bar chart to visualize the impact of each treatment on student math scores
+ggplot(plot_data, aes(x = group, y = value, fill = group)) +
+  geom_bar(stat = "identity") +  # Create bars with heights equal to the coefficient values
+  scale_fill_manual(values = green_shades) +  # Apply the defined green shades to the bars
+  theme_minimal() +  # Use a minimal theme for a cleaner look
+  labs(title = "Impact of Treatment on Student Math Scores",  # Title of the plot
+       x = "Comparison Groups",  # Label for the x-axis
+       y = "Difference in Math Scores") +  # Label for the y-axis
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +  # Add a dashed line at y = 0 for reference
+  theme(plot.title = element_text(hjust = 0.5))  # Center the plot title
+
+```
+
